@@ -1,0 +1,2 @@
+login,password,fullName,alfacrmId,groupName,portfolioUrl,driveUrl,isActive
+demo.uchenik,Parol-Demo-2026,Демо Ученик,123456,Скретч-1,https://example.com/portfolio/demo,https://drive.google.com/drive/folders/DEMO,1

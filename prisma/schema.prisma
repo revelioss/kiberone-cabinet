@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum RecordSource {
+  CRM
+  MANUAL
+}
+
+model User {
+  id           String    @id @default(cuid())
+  login        String    @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  student      Student?
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  login     String
+  ip        String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([login, createdAt])
+  @@index([ip, createdAt])
+}
+
+model Student {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName              String
+  alfacrmId             Int?      @unique
+  groupName             String    @default("")
+  campus                String    @default("")
+  portfolioUrl          String    @default("")
+  driveUrl              String    @default("")
+  driveFolderName       String    @default("")
+  kiberonBalance        Float     @default(0)
+  kiberonManualOverride Boolean   @default(false)
+  ratingEnabled         Boolean   @default(false)
+  ratingScore           Int?
+  studyStatus           String    @default("")
+  lastSyncedAt          DateTime?
+  syncWarning           String    @default("")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  bonuses               BonusTransaction[]
+  lessons               LessonRecord[]
+  homework              HomeworkItem[]
+  tests                 TestResult[]
+  certificates          Certificate[]
+  achievements          Achievement[]
+}
+
+model BonusTransaction {
+  id           String       @id @default(cuid())
+  studentId    String
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  externalId   String?      @unique
+  amount       Float
+  balanceAfter Float?
+  note         String       @default("")
+  kind         String
+  occurredAt   DateTime
+  source       RecordSource
+  createdAt    DateTime     @default(now())
+
+  @@index([studentId, occurredAt])
+}
+
+model LessonRecord {
+  id            String       @id @default(cuid())
+  studentId     String
+  student       Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  externalId    String?      @unique
+  occurredOn    DateTime
+  timeFrom      String       @default("")
+  timeTo        String       @default("")
+  topic         String
+  subject       String       @default("")
+  groupName     String       @default("")
+  status        String
+  homeworkText  String       @default("")
+  localOverride Boolean      @default(false)
+  source        RecordSource
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([studentId, occurredOn])
+}
+
+model HomeworkItem {
+  id             String       @id @default(cuid())
+  studentId      String
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  externalId     String?      @unique
+  title          String
+  description    String       @default("")
+  dueOn          DateTime?
+  status         String       @default("new")
+  teacherComment String       @default("")
+  grade          String       @default("")
+  source         RecordSource
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([studentId])
+}
+
+model TestResult {
+  id         String       @id @default(cuid())
+  studentId  String
+  student    Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  externalId String?      @unique
+  title      String
+  score      Float?
+  maxScore   Float?
+  takenAt    DateTime
+  comment    String       @default("")
+  source     RecordSource
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([studentId, takenAt])
+}
+
+model Certificate {
+  id        String    @id @default(cuid())
+  studentId String
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title     String
+  issuedOn  DateTime?
+  note      String    @default("")
+  fileName  String    @default("")
+  filePath  String    @default("")
+  mimeType  String    @default("")
+  createdAt DateTime  @default(now())
+}
+
+model Achievement {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title       String
+  description String    @default("")
+  awardedOn   DateTime?
+  fileName    String    @default("")
+  filePath    String    @default("")
+  mimeType    String    @default("")
+  createdAt   DateTime  @default(now())
+}
+
+model StoredFile {
+  id        String   @id @default(cuid())
+  fileName  String
+  mimeType  String
+  data      Bytes
+  createdAt DateTime @default(now())
+}
+
+model SyncRun {
+  id         String    @id @default(cuid())
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  status     String
+  mode       String
+  trigger    String
+  message    String    @default("")
+  statsJson  String    @default("{}")
+}
