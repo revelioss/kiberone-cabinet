@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { hashPassword } from "../src/lib/password";
+import { hashPassword, verifyPassword } from "../src/lib/password";
 import { prisma } from "../src/lib/db";
 import { runSync } from "../src/lib/alfacrm/sync";
 
@@ -64,7 +64,21 @@ const demos: DemoStudent[] = [
 
 async function ensureUser(input: { login: string; password: string; role: "ADMIN" | "STUDENT"; isActive: boolean }) {
   const existing = await prisma.user.findUnique({ where: { login: input.login } });
-  if (existing) return existing;
+  if (existing) {
+    if (input.role === "ADMIN") {
+      const matches = await verifyPassword(input.password, existing.passwordHash);
+      if (!matches) {
+        return prisma.user.update({
+          where: { id: existing.id },
+          data: {
+            passwordHash: await hashPassword(input.password),
+            isActive: true,
+          },
+        });
+      }
+    }
+    return existing;
+  }
   return prisma.user.create({
     data: {
       login: input.login,
