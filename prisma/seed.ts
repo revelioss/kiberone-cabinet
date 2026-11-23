@@ -2,6 +2,7 @@ import "dotenv/config";
 import { hashPassword, verifyPassword } from "../src/lib/password";
 import { prisma } from "../src/lib/db";
 import { runSync } from "../src/lib/alfacrm/sync";
+import { adminSeedMissingPasswordError, adminSeedPlan, adminSeedSkipMessage } from "../src/lib/admin-seed";
 
 type DemoStudent = {
   login: string;
@@ -92,16 +93,21 @@ async function ensureUser(input: { login: string; password: string; role: "ADMIN
 async function main() {
   const demo = process.env.SEED_DEMO !== "0";
   const adminLogin = process.env.ADMIN_LOGIN || "admin";
-  const adminPassword = process.env.ADMIN_PASSWORD || (demo ? "Kabinet-Admin-2026" : "");
-  if (!adminPassword) {
-    throw new Error("Задайте ADMIN_PASSWORD: без него нельзя создать вход преподавателя.");
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const existingAdmin = await prisma.user.findUnique({ where: { login: adminLogin } });
+  const plan = adminSeedPlan(adminPassword, Boolean(existingAdmin));
+  if (plan === "skip-existing") {
+    console.log(adminSeedSkipMessage(adminLogin));
+  } else if (plan === "fail-missing") {
+    throw new Error(adminSeedMissingPasswordError());
+  } else {
+    await ensureUser({
+      login: adminLogin,
+      password: (adminPassword ?? "").trim(),
+      role: "ADMIN",
+      isActive: true,
+    });
   }
-  await ensureUser({
-    login: adminLogin,
-    password: adminPassword,
-    role: "ADMIN",
-    isActive: true,
-  });
 
   if (!demo) {
     console.log(`Готово. Преподаватель: ${adminLogin}. Учебные ученики не создавались.`);

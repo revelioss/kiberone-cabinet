@@ -12,6 +12,7 @@ const links = [
   { href: "/admin/students/from-crm", label: "Из AlfaCRM" },
   { href: "/admin/import", label: "Импорт CSV" },
   { href: "/admin/sync", label: "Синхронизация" },
+  { href: "/admin/password", label: "Сменить пароль" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

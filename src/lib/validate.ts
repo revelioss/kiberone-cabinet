@@ -5,10 +5,6 @@ const loginSchema = z
   .trim()
   .regex(/^[a-zA-Z0-9._-]{3,32}$/, "Логин: 3–32 символа, латиница, цифры, точка, _ или -.");
 
-const passwordSchema = z
-  .string()
-  .min(8, "Пароль не короче 8 символов.")
-  .max(72, "Пароль не длиннее 72 символов.");
 
 const urlSchema = z
   .string()
@@ -20,9 +16,13 @@ export function validateLogin(login: string) {
   return parsed.success ? null : parsed.error.issues[0]?.message ?? "Проверьте логин.";
 }
 
-export function validatePassword(password: string, required: boolean) {
+export function validatePassword(password: string, required: boolean, minLength = 8) {
   if (!password && !required) return null;
-  const parsed = passwordSchema.safeParse(password);
+  const schema = z
+    .string()
+    .min(minLength, `Пароль не короче ${minLength} символов.`)
+    .max(72, "Пароль не длиннее 72 символов.");
+  const parsed = schema.safeParse(password);
   return parsed.success ? null : parsed.error.issues[0]?.message ?? "Проверьте пароль.";
 }
 
