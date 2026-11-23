@@ -117,9 +117,36 @@ export class AlfaCrmClient {
   }
 }
 
+export type CrmCustomerHit = {
+  id: number;
+  name: string;
+  groupName: string;
+};
+
+function groupNamesFromCustomer(customer: Record<string, unknown>) {
+  const groups = Array.isArray(customer.groups) ? customer.groups : [];
+  const names: string[] = [];
+  for (const group of groups) {
+    if (group && typeof group === "object" && "name" in group && (group as { name?: unknown }).name) {
+      names.push(String((group as { name: unknown }).name));
+    }
+  }
+  return [...new Set(names)].join(", ");
+}
+
+export function customerHit(customer: Record<string, unknown>): CrmCustomerHit {
+  const id = Number(customer.id);
+  return {
+    id,
+    name: customer.name == null ? "" : String(customer.name).trim(),
+    groupName: groupNamesFromCustomer(customer),
+  };
+}
+
 export type AlfaApi = {
   mode: "live" | "mock";
   fetchCustomer(id: number): Promise<Record<string, unknown> | null>;
+  searchCustomers(query: string): Promise<CrmCustomerHit[]>;
   fetchBonusBalance(id: number): Promise<unknown>;
   fetchBonusHistory(id: number): Promise<{ supported: boolean; items: Record<string, unknown>[]; note?: string }>;
   fetchMemberships(id: number): Promise<Record<string, unknown>[]>;
@@ -150,6 +177,32 @@ export class LiveAlfaApi implements AlfaApi {
       withGroups: true,
     });
     return items.find((item) => Number(item.id) === id) ?? items[0] ?? null;
+  }
+
+  async searchCustomers(query: string) {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+    if (/^\d+$/.test(trimmed)) {
+      const id = Number(trimmed);
+      if (!Number.isSafeInteger(id) || id <= 0) return [];
+      const customer = await this.fetchCustomer(id);
+      return customer ? [customerHit(customer)] : [];
+    }
+    const payload = await this.client.post(this.client.branchPath("customer", "index"), {
+      is_study: 1,
+      name: trimmed,
+      page: 0,
+      pageSize: 20,
+      withGroups: true,
+    });
+    const needle = trimmed.toLowerCase();
+    return extractItems(payload)
+      .filter((item) => {
+        const name = item.name == null ? "" : String(item.name).toLowerCase();
+        return name.includes(needle);
+      })
+      .slice(0, 20)
+      .map(customerHit);
   }
 
   fetchBonusBalance(id: number) {

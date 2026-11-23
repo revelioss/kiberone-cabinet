@@ -9,6 +9,7 @@ const links = [
   { href: "/admin", label: "Сводка" },
   { href: "/admin/students", label: "Ученики" },
   { href: "/admin/students/new", label: "Новый ученик" },
+  { href: "/admin/students/from-crm", label: "Из AlfaCRM" },
   { href: "/admin/import", label: "Импорт CSV" },
   { href: "/admin/sync", label: "Синхронизация" },
 ];

@@ -35,9 +35,14 @@ export default async function StudentsPage({
     <div className="grid gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <PageTitle title="Ученики" subtitle="Поиск по имени, логину или группе." />
-        <Link href="/admin/students/new" className={cn(buttonVariants({ size: "lg" }))}>
-          Добавить
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/students/from-crm" className={cn(buttonVariants({ size: "lg" }))}>
+            Из AlfaCRM
+          </Link>
+          <Link href="/admin/students/new" className={cn(buttonVariants({ size: "lg", variant: "secondary" }))}>
+            Вручную
+          </Link>
+        </div>
       </div>
       <Notice ok={params.ok} error={params.error} />
       <form className="flex gap-2">

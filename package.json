@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-4317}",
     "lint": "eslint",
-    "test": "tsx --test src/lib/alfacrm/parse.test.ts src/lib/csv.test.ts src/lib/format.test.ts",
+    "test": "tsx --test src/lib/alfacrm/parse.test.ts src/lib/csv.test.ts src/lib/format.test.ts src/lib/student-login.test.ts src/lib/password.test.ts",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",

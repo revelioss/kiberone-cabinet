@@ -327,6 +327,7 @@ async function runSyncInner(options: { trigger: SyncTrigger; studentId?: string 
   const stats = { students: 0, updated: 0, missing: 0, bonuses: 0, lessons: 0, tests: 0, warnings };
   try {
     const api = createAlfaApi();
+    // Только уже заведённые в кабинете ученики. Новых из CRM синхронизация не создаёт.
     const students = await prisma.student.findMany({
       where: {
         ...(options.studentId ? { id: options.studentId } : {}),

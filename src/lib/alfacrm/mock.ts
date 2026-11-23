@@ -1,4 +1,4 @@
-import type { AlfaApi } from "./client";
+import { customerHit, type AlfaApi } from "./client";
 
 function shift(days: number) {
   const date = new Date();
@@ -241,6 +241,22 @@ export class MockAlfaApi implements AlfaApi {
 
   async fetchCustomer(id: number) {
     return fixtures.get(id)?.customer ?? null;
+  }
+
+  async searchCustomers(query: string) {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+    if (/^\d+$/.test(trimmed)) {
+      const customer = await this.fetchCustomer(Number(trimmed));
+      return customer ? [customerHit(customer)] : [];
+    }
+    const needle = trimmed.toLowerCase();
+    const hits = [];
+    for (const fixture of fixtures.values()) {
+      const name = String(fixture.customer.name ?? "").toLowerCase();
+      if (name.includes(needle)) hits.push(customerHit(fixture.customer));
+    }
+    return hits.slice(0, 20);
   }
 
   async fetchBonusBalance(id: number) {

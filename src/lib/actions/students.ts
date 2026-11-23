@@ -8,6 +8,8 @@ import { parseCsv } from "../csv";
 import { prisma } from "../db";
 import { removeUpload } from "../storage";
 import { parseActiveFlag, parseOptionalInt, validateLogin, validateName, validatePassword, validateUrl } from "../validate";
+import { importOneCrmStudent } from "../crm-import";
+import { createAlfaApi } from "../alfacrm/sync";
 
 export type AccountState = {
   message: string;
@@ -273,4 +275,49 @@ export async function importStudents(_prev: AccountState, formData: FormData): P
   revalidatePath("/admin/students");
   const summary = `Создано: ${created}. Обновлено: ${updated}. Ошибок: ${errors.length}.`;
   return { message: errors.length ? `${summary} ${errors.slice(0, 5).join(" ")}` : summary };
+}
+
+
+export type CrmSearchState = {
+  message: string;
+  query: string;
+  results: { id: number; name: string; groupName: string }[];
+};
+
+export async function searchCrmCustomers(_prev: CrmSearchState, formData: FormData): Promise<CrmSearchState> {
+  await requireAdmin();
+  const query = text(formData, "query");
+  if (!query) return { message: "Введите ID клиента или часть имени.", query, results: [] };
+  try {
+    const results = await createAlfaApi().searchCustomers(query);
+    if (results.length === 0) {
+      return { message: "Никого не нашли среди действующих учеников AlfaCRM.", query, results: [] };
+    }
+    return { message: `Найдено: ${results.length}. Добавляйте по одному.`, query, results };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Не удалось выполнить поиск в AlfaCRM.";
+    return { message, query, results: [] };
+  }
+}
+
+export async function importCrmStudent(_prev: AccountState, formData: FormData): Promise<AccountState> {
+  await requireAdmin();
+  const crm = parseOptionalInt(text(formData, "alfacrmId"));
+  if (!crm.ok || crm.value == null) {
+    return { message: crm.ok ? "Укажите ID клиента в AlfaCRM." : crm.error || "Проверьте ID." };
+  }
+  try {
+    const result = await importOneCrmStudent(crm.value);
+    revalidatePath("/admin/students");
+    if (!result.ok) return { message: result.message };
+    const loginLine = result.login ? ` Логин: ${result.login}.` : "";
+    return {
+      message: `${result.message}${loginLine}`,
+      password: result.password,
+      studentId: result.studentId,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Не удалось добавить ученика.";
+    return { message };
+  }
 }
