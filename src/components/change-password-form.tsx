@@ -26,12 +26,12 @@ export function ChangePasswordForm() {
           className={controlClass}
         />
       </Field>
-      <Field label="Новый пароль" hint="Не короче 10 символов.">
+      <Field label="Новый пароль" hint="Не короче 3 символов.">
         <Input
           name="newPassword"
           type="password"
           required
-          minLength={10}
+          minLength={3}
           maxLength={72}
           autoComplete="new-password"
           className={controlClass}
@@ -42,7 +42,7 @@ export function ChangePasswordForm() {
           name="confirmPassword"
           type="password"
           required
-          minLength={10}
+          minLength={3}
           maxLength={72}
           autoComplete="new-password"
           className={controlClass}

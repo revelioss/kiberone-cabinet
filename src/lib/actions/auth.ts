@@ -55,7 +55,7 @@ export async function changeAdminPassword(_prev: ChangePasswordState, formData: 
   if (!currentPassword) return { message: "Введите текущий пароль." };
   const matches = await checkPassword(currentPassword, admin.passwordHash);
   if (!matches) return { message: "Текущий пароль неверный." };
-  const passwordError = validatePassword(newPassword, true, 10);
+  const passwordError = validatePassword(newPassword, true, 3);
   if (passwordError) return { message: passwordError };
   if (newPassword !== confirmPassword) return { message: "Новый пароль и подтверждение не совпадают." };
   if (newPassword === currentPassword) return { message: "Новый пароль должен отличаться от текущего." };
